@@ -68,6 +68,70 @@ describe("Calculator", () => {
     expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("0.3");
   });
 
+  it("[AC-003] displays the correct difference of two whole numbers", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("1-btn"));
+    await user.click(screen.getByTestId("2-btn"));
+    await user.click(screen.getByTestId("btn-3")); // −
+    await user.click(screen.getByTestId("5-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("7");
+  });
+
+  it("[AC-003] displays the correct difference when both operands are decimal numbers", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("9-btn"));
+    await user.click(screen.getByTestId("btn-6")); // .
+    await user.click(screen.getByTestId("5-btn"));
+    await user.click(screen.getByTestId("btn-3")); // −
+    await user.click(screen.getByTestId("2-btn"));
+    await user.click(screen.getByTestId("btn-6")); // .
+    await user.click(screen.getByTestId("2-btn"));
+    await user.click(screen.getByTestId("5-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("7.25");
+  });
+
+  it("[AC-004] displays a negative result correctly when the subtraction result is negative", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("5-btn"));
+    await user.click(screen.getByTestId("btn-3")); // −
+    await user.click(screen.getByTestId("1-btn"));
+    await user.click(screen.getByTestId("2-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("-7");
+  });
+
+  it("[AC-004] displays a negative decimal result correctly when the subtraction result is negative", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("2-btn"));
+    await user.click(screen.getByTestId("btn-6")); // .
+    await user.click(screen.getByTestId("5-btn"));
+    await user.click(screen.getByTestId("btn-3")); // −
+    await user.click(screen.getByTestId("9-btn"));
+    await user.click(screen.getByTestId("btn-6")); // .
+    await user.click(screen.getByTestId("7-btn"));
+    await user.click(screen.getByTestId("5-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("-7.25");
+  });
+
   it("opens on a worked decimal addition example showing its correct sum", () => {
     render(<Calculator />);
 
