@@ -16,7 +16,14 @@ const SYMBOL = { add: "+", sub: "−", mul: "×", div: "÷" };
 
 // Row 3 → Row 7 of the keypad, in wireframe order. 12-column spans.
 const KEYS = [
-  { id: "clear", wf: "b-2-0", label: "C", aria: "Clear and start over", span: "col-span-6", kind: "clear" },
+  {
+    id: "clear",
+    wf: "b-2-0",
+    label: "C",
+    aria: "Clear and start over",
+    span: "col-span-6",
+    kind: "clear",
+  },
   { id: "div", wf: "b-2-1", label: "÷", aria: "Divide", span: "col-span-3", kind: "op" },
   { id: "mul", wf: "b-2-2", label: "×", aria: "Multiply", span: "col-span-3", kind: "op" },
   { id: "7", wf: "b-3-0", label: "7", aria: "Seven", span: "col-span-3", kind: "digit" },
@@ -30,33 +37,61 @@ const KEYS = [
   { id: "1", wf: "b-5-0", label: "1", aria: "One", span: "col-span-3", kind: "digit" },
   { id: "2", wf: "b-5-1", label: "2", aria: "Two", span: "col-span-3", kind: "digit" },
   { id: "3", wf: "b-5-2", label: "3", aria: "Three", span: "col-span-3", kind: "digit" },
-  { id: "equals", wf: "b-5-3", label: "=", aria: "Equals, show the answer", span: "col-span-3", kind: "equals" },
+  {
+    id: "equals",
+    wf: "b-5-3",
+    label: "=",
+    aria: "Equals, show the answer",
+    span: "col-span-3",
+    kind: "equals",
+  },
   { id: "0", wf: "b-6-0", label: "0", aria: "Zero", span: "col-span-9", kind: "digit" },
   { id: "dot", wf: "b-6-1", label: ".", aria: "Decimal point", span: "col-span-3", kind: "digit" },
 ];
 
 const ERRORS = {
   divzero: {
-    title: "Can’t divide by zero",
-    body: "Dividing by zero has no answer. Enter a different divisor, or press C to start fresh.",
+    title: "Cannot divide by zero",
+    body: "Press C to start over.",
   },
-  doubleOp: {
-    title: "One operation at a time",
-    body: "Enter a number before choosing the next operation.",
+  incomplete: {
+    title: "That calculation is incomplete",
+    body: "Check your entry and try again.",
   },
-  nothing: {
-    title: "Nothing to work out yet",
-    body: "Enter a number, pick ÷ × − or +, then enter the second number and press =.",
-  },
-  needOp: {
-    title: "Pick an operation",
-    body: "You have one number so far. Choose ÷ × − or +, then enter the second number.",
-  },
+};
+
+// Maps each key's internal id to the test id the approved screen spec requires.
+const TESTID = {
+  clear: "c-btn",
+  div: "btn-1",
+  mul: "btn-2",
+  "7": "7-btn",
+  "8": "8-btn",
+  "9": "9-btn",
+  sub: "btn-3",
+  "4": "4-btn",
+  "5": "5-btn",
+  "6": "6-btn",
+  add: "btn-4",
+  "1": "1-btn",
+  "2": "2-btn",
+  "3": "3-btn",
+  equals: "btn-5",
+  "0": "0-btn",
+  dot: "btn-6",
 };
 
 const BLANK = { expr: "", entry: "0", prev: null, op: null, fresh: true, done: false, error: null };
 // The screen opens on a worked example; C returns it to BLANK. Nothing is stored anywhere.
-const OPENING = { expr: "12.5 + 4", entry: "16.5", prev: null, op: null, fresh: true, done: true, error: null };
+const OPENING = {
+  expr: "12.5 + 4",
+  entry: "16.5",
+  prev: null,
+  op: null,
+  fresh: true,
+  done: true,
+  error: null,
+};
 
 const fmt = (n) => {
   if (!Number.isFinite(n)) return "0";
@@ -105,33 +140,50 @@ export default function Screen() {
       if (id === "add" || id === "sub" || id === "mul" || id === "div") {
         const sym = SYMBOL[id];
         if (s.error) {
-          return { expr: `${s.entry} ${sym}`, entry: s.entry, prev: Number(s.entry), op: id, fresh: true, done: false, error: null };
+          return {
+            expr: `${s.entry} ${sym}`,
+            entry: s.entry,
+            prev: Number(s.entry),
+            op: id,
+            fresh: true,
+            done: false,
+            error: null,
+          };
         }
-        if (s.op && s.fresh && !s.done) return { ...s, error: ERRORS.doubleOp };
+        if (s.op && s.fresh && !s.done) return { ...s, error: ERRORS.incomplete };
         if (s.op && !s.fresh) {
           const out = apply(s.prev, s.op, Number(s.entry));
           if (out === null) return { ...s, error: ERRORS.divzero };
           const shown = fmt(out);
-          return { expr: `${shown} ${sym}`, entry: shown, prev: out, op: id, fresh: true, done: false, error: null };
+          return {
+            expr: `${shown} ${sym}`,
+            entry: shown,
+            prev: out,
+            op: id,
+            fresh: true,
+            done: false,
+            error: null,
+          };
         }
-        return { expr: `${s.entry} ${sym}`, entry: s.entry, prev: Number(s.entry), op: id, fresh: true, done: false, error: null };
+        return {
+          expr: `${s.entry} ${sym}`,
+          entry: s.entry,
+          prev: Number(s.entry),
+          op: id,
+          fresh: true,
+          done: false,
+          error: null,
+        };
       }
 
       if (id === "equals") {
         if (s.error) return s;
         if (!s.op) {
           if (s.done) return s;
-          if (s.entry === "0" && !s.expr) return { ...s, error: ERRORS.nothing };
-          return { ...s, error: ERRORS.needOp };
+          return { ...s, error: ERRORS.incomplete };
         }
         if (s.fresh) {
-          return {
-            ...s,
-            error: {
-              title: "One number short",
-              body: `Enter the number after the ${SYMBOL[s.op]}, then press = for the answer.`,
-            },
-          };
+          return { ...s, error: ERRORS.incomplete };
         }
         const out = apply(s.prev, s.op, Number(s.entry));
         if (out === null) return { ...s, error: ERRORS.divzero };
@@ -245,7 +297,11 @@ export default function Screen() {
       `}</style>
 
       <header data-wf="b-0-0">
-        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl" style={{ fontFamily: brand.fontHeading }}>
+        <h1
+          data-testid="calculator-title"
+          className="text-4xl font-extrabold tracking-tight sm:text-5xl"
+          style={{ fontFamily: brand.fontHeading }}
+        >
           {SCREEN}
         </h1>
         <p className="mt-1 text-sm" style={{ color: "var(--brand-fg-muted)" }}>
@@ -255,16 +311,23 @@ export default function Screen() {
 
       <article
         data-wf="b-1-0"
+        data-testid="12-5-4-card"
         className="relative overflow-hidden p-6 backdrop-blur-xl sm:p-8"
         style={{ ...glass, boxShadow: "0 30px 70px -35px rgba(0,0,0,0.8)" }}
       >
         <div
           aria-hidden
           className="absolute -right-12 -top-16 h-52 w-52 rounded-full blur-[70px]"
-          style={{ backgroundColor: mix(st.error ? brand.accentColor : brand.primaryColor, 55), opacity: 0.7 }}
+          style={{
+            backgroundColor: mix(st.error ? brand.accentColor : brand.primaryColor, 55),
+            opacity: 0.7,
+          }}
         />
         <div className="relative flex items-center justify-between gap-4">
-          <p className="truncate text-sm font-semibold tabular-nums" style={{ color: "var(--brand-fg-muted)" }}>
+          <p
+            className="truncate text-sm font-semibold tabular-nums"
+            style={{ color: "var(--brand-fg-muted)" }}
+          >
             {st.expr || "Ready when you are"}
           </p>
           {st.done && !st.error ? (
@@ -300,7 +363,11 @@ export default function Screen() {
                 borderRadius: `calc(${brand.radius} - 4px)`,
               }}
             >
-              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" style={{ color: brand.accentColor }} aria-hidden />
+              <AlertCircle
+                className="mt-0.5 h-5 w-5 shrink-0"
+                style={{ color: brand.accentColor }}
+                aria-hidden
+              />
               <p className="text-sm leading-snug">
                 <span className="font-bold" style={{ color: brand.accentColor }}>
                   {st.error.title}.
@@ -310,7 +377,9 @@ export default function Screen() {
             </div>
           ) : (
             <p className="text-right text-xs" style={{ color: "var(--brand-fg-muted)" }}>
-              {st.op ? `Enter the number after the ${SYMBOL[st.op]}, then press =` : "Pick ÷ × − or + to start a calculation"}
+              {st.op
+                ? `Enter the number after the ${SYMBOL[st.op]}, then press =`
+                : "Pick ÷ × − or + to start a calculation"}
             </p>
           )}
         </div>
@@ -323,6 +392,7 @@ export default function Screen() {
             key={k.id}
             type="button"
             data-wf={k.wf}
+            data-testid={TESTID[k.id]}
             data-np-key={k.id}
             data-flash={flash && flash.id === k.id ? "on" : "off"}
             aria-label={k.aria}
@@ -340,11 +410,17 @@ export default function Screen() {
         className="p-4 text-sm leading-relaxed"
         style={{ ...glass, color: "var(--brand-fg-muted)" }}
       >
-        Keyboard works too: type digits and . for decimals, use + − * / for operations, Enter for =, and Esc or Delete to clear.
+        Keyboard works too: type digits and . for decimals, use + − * / for operations, Enter for =,
+        and Esc or Delete to clear.
       </p>
 
-      <p data-wf="b-8-0" className="text-xs leading-relaxed" style={{ color: "var(--brand-fg-muted)" }}>
-        No account, no sign-in and no payment needed. Every calculation runs in your browser and nothing is saved after you close or reload the page.
+      <p
+        data-wf="b-8-0"
+        className="text-xs leading-relaxed"
+        style={{ color: "var(--brand-fg-muted)" }}
+      >
+        No account, no sign-in and no payment needed. Every calculation runs in your browser and
+        nothing is saved after you close or reload the page.
       </p>
     </div>
   );
