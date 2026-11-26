@@ -668,4 +668,55 @@ describe("Calculator", () => {
 
     expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("7.9");
   });
+
+  it("[AC-019] shows the incomplete-calculation message when two operators are pressed in a row", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("5-btn"));
+    await user.click(screen.getByTestId("btn-4")); // +
+    await user.click(screen.getByTestId("btn-2")); // × right after +, no operand in between
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent(
+      "That calculation is incomplete. Check your entry and try again.",
+    );
+  });
+
+  it("[AC-019] shows the incomplete-calculation message when requesting a result with no operands entered", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("btn-5")); // = with nothing entered
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent(
+      "That calculation is incomplete. Check your entry and try again.",
+    );
+  });
+
+  it("[AC-019] stays usable after an invalid operation: it does not crash and completes a new calculation afterward", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("5-btn"));
+    await user.click(screen.getByTestId("btn-4")); // +
+    await user.click(screen.getByTestId("btn-1")); // ÷ right after +, two operators in a row
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent(
+      "That calculation is incomplete. Check your entry and try again.",
+    );
+    // The calculator stayed on screen and responsive: no crash.
+    expect(screen.getByTestId("calculator-title")).toBeInTheDocument();
+
+    // Still usable afterwards: a fresh calculation completes correctly.
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("3-btn"));
+    await user.click(screen.getByTestId("btn-4")); // +
+    await user.click(screen.getByTestId("2-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("5");
+  });
 });
