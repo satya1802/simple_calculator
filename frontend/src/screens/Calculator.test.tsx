@@ -719,4 +719,133 @@ describe("Calculator", () => {
 
     expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("5");
   });
+
+  const ALL_TESTIDS = [
+    "calculator-title",
+    "12-5-4-card",
+    "c-btn",
+    "btn-1",
+    "btn-2",
+    "7-btn",
+    "8-btn",
+    "9-btn",
+    "btn-3",
+    "4-btn",
+    "5-btn",
+    "6-btn",
+    "btn-4",
+    "1-btn",
+    "2-btn",
+    "3-btn",
+    "btn-5",
+    "0-btn",
+    "btn-6",
+  ];
+
+  // Resizes the jsdom window the way a real browser would when the user
+  // rotates a device or switches between a phone and a desktop monitor.
+  const resizeTo = (width) => {
+    Object.defineProperty(window, "innerWidth", {
+      writable: true,
+      configurable: true,
+      value: width,
+    });
+    window.dispatchEvent(new Event("resize"));
+  };
+
+  it("[AC-020] on a desktop-sized viewport, lays the display and every key out in a single comfortably sized view", () => {
+    resizeTo(1280);
+    render(<Calculator />);
+
+    for (const id of ALL_TESTIDS) {
+      expect(screen.getByTestId(id)).toBeInTheDocument();
+    }
+
+    // The keypad is capped to a comfortable reading width rather than
+    // stretching edge-to-edge of a large screen, and keeps generous padding
+    // around the display and keys.
+    const root = screen.getByTestId("calculator-title").closest("div[class*='max-w-2xl']");
+    expect(root).not.toBeNull();
+    expect(root.className).toMatch(/max-w-2xl/);
+    expect(root.className).toMatch(/lg:px-8/);
+
+    // Keys are drawn at their larger, desktop size.
+    expect(screen.getByTestId("btn-5").className).toMatch(/sm:h-20/);
+    expect(screen.getByTestId("btn-5").className).toMatch(/sm:text-3xl/);
+  });
+
+  it("[AC-021] on a mobile-sized viewport, every key and the display remain on screen and usable", () => {
+    resizeTo(375);
+    render(<Calculator />);
+
+    for (const id of ALL_TESTIDS) {
+      expect(screen.getByTestId(id)).toBeInTheDocument();
+    }
+
+    // The keypad uses a 12-column grid so every key's share of the row is
+    // proportional, not a fixed pixel width that could overflow a narrow
+    // screen.
+    const keypad = screen.getByRole("group", { name: "Calculator keypad" });
+    expect(keypad.className).toMatch(/grid-cols-12/);
+
+    // Each digit key keeps a touch-sized minimum height on mobile.
+    expect(screen.getByTestId("7-btn").className).toMatch(/h-16/);
+  });
+
+  it("[AC-021] stays usable after the viewport is resized from desktop down to mobile mid-session", async () => {
+    const user = userEvent.setup();
+    resizeTo(1280);
+    render(<Calculator />);
+
+    resizeTo(360);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("4-btn"));
+    await user.click(screen.getByTestId("btn-4")); // +
+    await user.click(screen.getByTestId("5-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("9");
+  });
+
+  it("[AC-022] completes a calculation without navigating away: the URL and document do not change", async () => {
+    const user = userEvent.setup();
+    const hrefBefore = window.location.href;
+    render(<Calculator />);
+
+    // Single-page behaviour relies on there being nothing a click could
+    // submit or navigate through.
+    expect(document.querySelector("form")).toBeNull();
+    expect(document.querySelector("a")).toBeNull();
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("7-btn"));
+    await user.click(screen.getByTestId("btn-2")); // ×
+    await user.click(screen.getByTestId("6-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("42");
+    expect(window.location.href).toBe(hrefBefore);
+  });
+
+  it("[AC-022] runs a whole sequence of calculator actions within one mounted instance, never remounting the screen", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+    const titleNode = screen.getByTestId("calculator-title");
+
+    for (const steps of [
+      ["c-btn", "1-btn", "btn-4", "1-btn", "btn-5"],
+      ["c-btn", "9-btn", "btn-3", "4-btn", "btn-5"],
+      ["c-btn", "6-btn", "btn-2", "7-btn", "btn-5"],
+    ]) {
+      for (const id of steps) {
+        await user.click(screen.getByTestId(id));
+      }
+    }
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("42");
+    // Same title node reference throughout: nothing reloaded or remounted
+    // the screen between any of the actions above.
+    expect(screen.getByTestId("calculator-title")).toBe(titleNode);
+  });
 });

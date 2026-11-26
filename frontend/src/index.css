@@ -15,9 +15,23 @@
   --brand-background: #06142b;
 }
 
+html {
+  /* Respect the device's own pixel sizing instead of the browser's
+     automatic text zoom, so layout and typography on mobile match what
+     the responsive classes below were designed for. */
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   background: var(--brand-background);
   color: var(--brand-fg);
   font-family: var(--brand-font-body);
   -webkit-font-smoothing: antialiased;
+  /* A fixed-width element (long expression, keypad grid) must never force
+     the page to scroll sideways on a narrow phone screen. */
+  overflow-x: hidden;
+  /* Keeps content clear of the notch/home-indicator safe areas on mobile
+     devices, without changing anything on desktop where these are 0. */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
