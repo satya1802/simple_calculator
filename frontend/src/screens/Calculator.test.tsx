@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -283,5 +283,45 @@ describe("Calculator", () => {
 
     expect(screen.getByTestId("calculator-title")).toHaveTextContent("Calculator");
     expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("16.5");
+  });
+
+  it("[AC-009] displays the result on the same render pass, with no waiting for it to appear", () => {
+    render(<Calculator />);
+
+    // fireEvent dispatches synchronously: if the result needed a later tick (a
+    // network round-trip or a reload) it would not yet be on screen here.
+    fireEvent.click(screen.getByTestId("c-btn"));
+    fireEvent.click(screen.getByTestId("2-btn"));
+    fireEvent.click(screen.getByTestId("btn-4")); // +
+    fireEvent.click(screen.getByTestId("3-btn"));
+    fireEvent.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("5");
+  });
+
+  it("[AC-009] shows the result in the same page without any page reload", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    // The title node is captured before the calculation and checked for
+    // identity afterwards: a page reload would unmount and remount it.
+    const titleBeforeResult = screen.getByTestId("calculator-title");
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("1-btn"));
+    await user.click(screen.getByTestId("2-btn"));
+    await user.click(screen.getByTestId("btn-4")); // +
+    await user.click(screen.getByTestId("8-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("20");
+    expect(screen.getByTestId("calculator-title")).toBe(titleBeforeResult);
+  });
+
+  it("[AC-009] keeps keypad buttons as plain buttons, so pressing = never submits a form or reloads the page", () => {
+    render(<Calculator />);
+
+    expect(screen.getByTestId("btn-5")).toHaveAttribute("type", "button");
+    expect(document.querySelector("form")).toBeNull();
   });
 });
