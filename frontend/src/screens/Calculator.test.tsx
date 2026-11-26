@@ -331,6 +331,71 @@ describe("Calculator", () => {
     expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("16.5");
   });
 
+  it("[AC-023] loads fully usable on first render, with no registration, login or personal-detail prompt", () => {
+    render(<Calculator />);
+
+    // The title and every keypad control are on screen and ready immediately,
+    // with nothing gating them behind sign-up or sign-in.
+    expect(screen.getByTestId("calculator-title")).toBeInTheDocument();
+    for (const id of [
+      "12-5-4-card",
+      "c-btn",
+      "btn-1",
+      "btn-2",
+      "7-btn",
+      "8-btn",
+      "9-btn",
+      "btn-3",
+      "4-btn",
+      "5-btn",
+      "6-btn",
+      "btn-4",
+      "1-btn",
+      "2-btn",
+      "3-btn",
+      "btn-5",
+      "0-btn",
+      "btn-6",
+    ]) {
+      expect(screen.getByTestId(id)).toBeInTheDocument();
+    }
+
+    // No prompt anywhere in the rendered screen asks the user to sign up,
+    // log in or hand over personal details, and there is nothing to submit.
+    const bodyText = document.body.textContent ?? "";
+    for (const phrase of [
+      "Log in",
+      "Log In",
+      "Sign in",
+      "Sign In",
+      "Sign up",
+      "Sign Up",
+      "Register",
+      "Create an account",
+      "Email",
+      "Password",
+    ]) {
+      expect(bodyText).not.toContain(phrase);
+    }
+    expect(document.querySelector("form")).toBeNull();
+    expect(document.querySelector("input")).toBeNull();
+  });
+
+  it("[AC-023] is immediately usable on first render: a calculation completes with no prior prompt or step", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    // No setup action of any kind precedes this calculation: the calculator
+    // is usable the instant it loads.
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("4-btn"));
+    await user.click(screen.getByTestId("btn-4")); // +
+    await user.click(screen.getByTestId("5-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("9");
+  });
+
   it("[AC-009] displays the result on the same render pass, with no waiting for it to appear", () => {
     render(<Calculator />);
 
