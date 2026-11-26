@@ -433,4 +433,115 @@ describe("Calculator", () => {
 
     expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("123");
   });
+
+  it("[AC-012] pressing a digit key on the keyboard registers that digit in the display", () => {
+    render(<Calculator />);
+    fireEvent.click(screen.getByTestId("c-btn"));
+
+    fireEvent.keyDown(window, { key: "7" });
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("7");
+  });
+
+  it("[AC-012] pressing several digit keys in sequence builds up the display, same as taps", () => {
+    render(<Calculator />);
+    fireEvent.click(screen.getByTestId("c-btn"));
+
+    fireEvent.keyDown(window, { key: "1" });
+    fireEvent.keyDown(window, { key: "2" });
+    fireEvent.keyDown(window, { key: "3" });
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("123");
+  });
+
+  it("[AC-012] pressing the decimal-point key registers a decimal point in the display", () => {
+    render(<Calculator />);
+    fireEvent.click(screen.getByTestId("c-btn"));
+
+    fireEvent.keyDown(window, { key: "3" });
+    fireEvent.keyDown(window, { key: "." });
+    fireEvent.keyDown(window, { key: "1" });
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("3.1");
+  });
+
+  it("[AC-012] pressing each operator key on the keyboard registers the operation and reflects it in the expression", () => {
+    const cases = [
+      { key: "/", symbol: "÷" },
+      { key: "*", symbol: "×" },
+      { key: "-", symbol: "−" },
+      { key: "+", symbol: "+" },
+    ];
+
+    for (const { key, symbol } of cases) {
+      const view = render(<Calculator />);
+      fireEvent.click(view.getByTestId("c-btn"));
+
+      fireEvent.keyDown(window, { key: "7" });
+      fireEvent.keyDown(window, { key });
+
+      expect(view.getByTestId("12-5-4-card")).toHaveTextContent(`7 ${symbol}`);
+      view.unmount();
+    }
+  });
+
+  it("[AC-012] pressing the Escape key on the keyboard registers a reset back to a blank display", () => {
+    render(<Calculator />);
+
+    fireEvent.keyDown(window, { key: "5" });
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("0");
+  });
+
+  it("[AC-013] pressing Enter after entering a calculation displays the result", () => {
+    render(<Calculator />);
+    fireEvent.click(screen.getByTestId("c-btn"));
+
+    fireEvent.keyDown(window, { key: "2" });
+    fireEvent.keyDown(window, { key: "+" });
+    fireEvent.keyDown(window, { key: "3" });
+    fireEvent.keyDown(window, { key: "Enter" });
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("5");
+  });
+
+  it("[AC-013] pressing Enter shows the incomplete-calculation message when the second number is missing", () => {
+    render(<Calculator />);
+    fireEvent.click(screen.getByTestId("c-btn"));
+
+    fireEvent.keyDown(window, { key: "5" });
+    fireEvent.keyDown(window, { key: "/" });
+    fireEvent.keyDown(window, { key: "Enter" });
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent(
+      "That calculation is incomplete. Check your entry and try again.",
+    );
+  });
+
+  it("[AC-013] pressing Enter shows the divide-by-zero message when dividing by zero from the keyboard", () => {
+    render(<Calculator />);
+    fireEvent.click(screen.getByTestId("c-btn"));
+
+    fireEvent.keyDown(window, { key: "5" });
+    fireEvent.keyDown(window, { key: "/" });
+    fireEvent.keyDown(window, { key: "0" });
+    fireEvent.keyDown(window, { key: "Enter" });
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent(
+      "Cannot divide by zero. Press C to start over.",
+    );
+  });
+
+  it("[AC-013] a calculation mixing keyboard and button presses completes correctly on Enter", () => {
+    render(<Calculator />);
+    fireEvent.click(screen.getByTestId("c-btn"));
+
+    fireEvent.click(screen.getByTestId("1-btn"));
+    fireEvent.keyDown(window, { key: "+" });
+    fireEvent.click(screen.getByTestId("8-btn"));
+    fireEvent.keyDown(window, { key: "Enter" });
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("9");
+  });
 });
