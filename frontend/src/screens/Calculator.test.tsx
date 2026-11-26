@@ -544,4 +544,82 @@ describe("Calculator", () => {
 
     expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("9");
   });
+
+  it("[AC-014] digits typed after a decimal point form a decimal value, treated as such in the calculation", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("3-btn"));
+    await user.click(screen.getByTestId("btn-6")); // .
+    await user.click(screen.getByTestId("1-btn"));
+    await user.click(screen.getByTestId("4-btn"));
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("3.14");
+
+    await user.click(screen.getByTestId("btn-4")); // +
+    await user.click(screen.getByTestId("btn-6")); // .
+    await user.click(screen.getByTestId("8-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    // 3.14 was used as the decimal value 3.14, not as 314 or 3: 3.14 + 0.8 = 3.94
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("3.94");
+  });
+
+  it("[AC-014] a decimal point entered part-way through typing a number still forms a decimal value", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("1-btn"));
+    await user.click(screen.getByTestId("2-btn"));
+    await user.click(screen.getByTestId("btn-6")); // .
+    await user.click(screen.getByTestId("5-btn"));
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("12.5");
+  });
+
+  it("[AC-015] a second decimal point is not added to a number that already has one", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("1-btn"));
+    await user.click(screen.getByTestId("btn-6")); // .
+    await user.click(screen.getByTestId("2-btn"));
+    await user.click(screen.getByTestId("btn-6")); // . — ignored, the number already has one
+    await user.click(screen.getByTestId("5-btn"));
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("1.25");
+  });
+
+  it("[AC-015] the number with the rejected second decimal point remains valid in the calculation", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("1-btn"));
+    await user.click(screen.getByTestId("btn-6")); // .
+    await user.click(screen.getByTestId("2-btn"));
+    await user.click(screen.getByTestId("btn-6")); // . — ignored
+    await user.click(screen.getByTestId("5-btn"));
+    await user.click(screen.getByTestId("btn-4")); // +
+    await user.click(screen.getByTestId("1-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    // 1.25 remained a single valid decimal value: 1.25 + 1 = 2.25
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("2.25");
+  });
+
+  it("[AC-015] pressing the decimal-point key twice on the keyboard does not add a second decimal point", () => {
+    render(<Calculator />);
+    fireEvent.click(screen.getByTestId("c-btn"));
+
+    fireEvent.keyDown(window, { key: "7" });
+    fireEvent.keyDown(window, { key: "." });
+    fireEvent.keyDown(window, { key: "." });
+    fireEvent.keyDown(window, { key: "9" });
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("7.9");
+  });
 });
