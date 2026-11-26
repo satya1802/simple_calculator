@@ -191,6 +191,93 @@ describe("Calculator", () => {
     expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("0.3");
   });
 
+  it("[AC-007] displays the correct quotient of two whole numbers", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("1-btn"));
+    await user.click(screen.getByTestId("2-btn"));
+    await user.click(screen.getByTestId("btn-1")); // ÷
+    await user.click(screen.getByTestId("3-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("4");
+  });
+
+  it("[AC-007] displays the correct quotient when the first operand has more than one digit", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("2-btn"));
+    await user.click(screen.getByTestId("0-btn"));
+    await user.click(screen.getByTestId("btn-1")); // ÷
+    await user.click(screen.getByTestId("4-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("5");
+  });
+
+  it("[AC-007] shows the incomplete-calculation message when requesting the result without entering a second number", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("5-btn"));
+    await user.click(screen.getByTestId("btn-1")); // ÷
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent(
+      "That calculation is incomplete. Check your entry and try again.",
+    );
+  });
+
+  it("[AC-007] shows the divide-by-zero message when the second number is zero", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("5-btn"));
+    await user.click(screen.getByTestId("btn-1")); // ÷
+    await user.click(screen.getByTestId("0-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent(
+      "Cannot divide by zero. Press C to start over.",
+    );
+  });
+
+  it("[AC-008] displays the decimal quotient when division produces a decimal result", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("5-btn"));
+    await user.click(screen.getByTestId("btn-1")); // ÷
+    await user.click(screen.getByTestId("2-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("2.5");
+  });
+
+  it("[AC-008] rounds away floating point drift when dividing decimal numbers", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("0-btn"));
+    await user.click(screen.getByTestId("btn-6")); // .
+    await user.click(screen.getByTestId("3-btn"));
+    await user.click(screen.getByTestId("btn-1")); // ÷
+    await user.click(screen.getByTestId("0-btn"));
+    await user.click(screen.getByTestId("btn-6")); // .
+    await user.click(screen.getByTestId("1-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("3");
+  });
+
   it("opens on a worked decimal addition example showing its correct sum", () => {
     render(<Calculator />);
 
