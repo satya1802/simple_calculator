@@ -248,6 +248,52 @@ describe("Calculator", () => {
     );
   });
 
+  it("[AC-017] shows a friendly message instead of a result when dividing by zero, and does not crash", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("1-btn"));
+    await user.click(screen.getByTestId("2-btn"));
+    await user.click(screen.getByTestId("btn-1")); // ÷
+    await user.click(screen.getByTestId("0-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent(
+      "Cannot divide by zero. Press C to start over.",
+    );
+    // The calculator stayed on screen and responsive: no crash.
+    expect(screen.getByTestId("calculator-title")).toBeInTheDocument();
+  });
+
+  it("[AC-018] clears the divide-by-zero error and is ready for a new calculation when C is pressed", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("9-btn"));
+    await user.click(screen.getByTestId("btn-1")); // ÷
+    await user.click(screen.getByTestId("0-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent(
+      "Cannot divide by zero. Press C to start over.",
+    );
+
+    await user.click(screen.getByTestId("c-btn"));
+
+    expect(screen.getByTestId("12-5-4-card")).not.toHaveTextContent("Cannot divide by zero");
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("0");
+
+    // Ready for a new calculation: digits and operations work normally again.
+    await user.click(screen.getByTestId("4-btn"));
+    await user.click(screen.getByTestId("btn-4")); // +
+    await user.click(screen.getByTestId("5-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("9");
+  });
+
   it("[AC-008] displays the decimal quotient when division produces a decimal result", async () => {
     const user = userEvent.setup();
     render(<Calculator />);
