@@ -132,6 +132,65 @@ describe("Calculator", () => {
     expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("-7.25");
   });
 
+  it("[AC-005] displays the correct product of two whole numbers", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("2-btn"));
+    await user.click(screen.getByTestId("btn-2")); // ×
+    await user.click(screen.getByTestId("3-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("6");
+  });
+
+  it("[AC-005] displays the correct product when the first operand has more than one digit", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("1-btn"));
+    await user.click(screen.getByTestId("2-btn"));
+    await user.click(screen.getByTestId("btn-2")); // ×
+    await user.click(screen.getByTestId("3-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("36");
+  });
+
+  it("[AC-006] displays the correct product when both operands are decimal numbers", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("1-btn"));
+    await user.click(screen.getByTestId("btn-6")); // .
+    await user.click(screen.getByTestId("5-btn"));
+    await user.click(screen.getByTestId("btn-2")); // ×
+    await user.click(screen.getByTestId("2-btn"));
+    await user.click(screen.getByTestId("btn-6")); // .
+    await user.click(screen.getByTestId("5-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("3.75");
+  });
+
+  it("[AC-006] rounds away floating point drift when multiplying decimal numbers", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("0-btn"));
+    await user.click(screen.getByTestId("btn-6")); // .
+    await user.click(screen.getByTestId("1-btn"));
+    await user.click(screen.getByTestId("btn-2")); // ×
+    await user.click(screen.getByTestId("3-btn"));
+    await user.click(screen.getByTestId("btn-5")); // =
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("0.3");
+  });
+
   it("opens on a worked decimal addition example showing its correct sum", () => {
     render(<Calculator />);
 
