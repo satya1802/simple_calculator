@@ -324,4 +324,113 @@ describe("Calculator", () => {
     expect(screen.getByTestId("btn-5")).toHaveAttribute("type", "button");
     expect(document.querySelector("form")).toBeNull();
   });
+
+  const DIGIT_TESTIDS = {
+    "0": "0-btn",
+    "1": "1-btn",
+    "2": "2-btn",
+    "3": "3-btn",
+    "4": "4-btn",
+    "5": "5-btn",
+    "6": "6-btn",
+    "7": "7-btn",
+    "8": "8-btn",
+    "9": "9-btn",
+  };
+
+  it("[AC-010] clicking any digit button registers that digit and reflects it in the display", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    for (const [digit, testId] of Object.entries(DIGIT_TESTIDS)) {
+      await user.click(screen.getByTestId("c-btn"));
+      await user.click(screen.getByTestId(testId));
+
+      expect(screen.getByTestId("12-5-4-card")).toHaveTextContent(digit);
+    }
+  });
+
+  it("[AC-010] clicking each operation button registers the operation and reflects it in the expression", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    const cases = [
+      { testId: "btn-1", symbol: "÷" },
+      { testId: "btn-2", symbol: "×" },
+      { testId: "btn-3", symbol: "−" },
+      { testId: "btn-4", symbol: "+" },
+    ];
+
+    for (const { testId, symbol } of cases) {
+      await user.click(screen.getByTestId("c-btn"));
+      await user.click(screen.getByTestId("7-btn"));
+      await user.click(screen.getByTestId(testId));
+
+      expect(screen.getByTestId("12-5-4-card")).toHaveTextContent(`7 ${symbol}`);
+    }
+  });
+
+  it("[AC-010] clicking the decimal-point button registers a decimal point in the display", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("c-btn"));
+    await user.click(screen.getByTestId("3-btn"));
+    await user.click(screen.getByTestId("btn-6")); // .
+    await user.click(screen.getByTestId("1-btn"));
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("3.1");
+  });
+
+  it("[AC-010] clicking the clear button registers a reset back to a blank display", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+
+    await user.click(screen.getByTestId("5-btn"));
+    await user.click(screen.getByTestId("c-btn"));
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("0");
+  });
+
+  it("[AC-011] a tap on a digit button is registered as a digit in the display, same as a click", () => {
+    render(<Calculator />);
+    const btn = screen.getByTestId("c-btn");
+    fireEvent.click(btn);
+
+    const seven = screen.getByTestId("7-btn");
+    // Simulate the touch sequence a touchscreen browser fires for a tap,
+    // ending in the click it translates that tap into.
+    fireEvent.touchStart(seven);
+    fireEvent.touchEnd(seven);
+    fireEvent.click(seven);
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("7");
+  });
+
+  it("[AC-011] a tap on an operation button is registered as the intended operation", () => {
+    render(<Calculator />);
+    fireEvent.click(screen.getByTestId("c-btn"));
+    fireEvent.click(screen.getByTestId("9-btn"));
+
+    const divide = screen.getByTestId("btn-1");
+    fireEvent.touchStart(divide);
+    fireEvent.touchEnd(divide);
+    fireEvent.click(divide);
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("9 ÷");
+  });
+
+  it("[AC-011] a rapid sequence of taps is registered in full, with no tap lost or duplicated", () => {
+    render(<Calculator />);
+    fireEvent.click(screen.getByTestId("c-btn"));
+
+    for (const testId of ["1-btn", "2-btn", "3-btn"]) {
+      const btn = screen.getByTestId(testId);
+      fireEvent.touchStart(btn);
+      fireEvent.touchEnd(btn);
+      fireEvent.click(btn);
+    }
+
+    expect(screen.getByTestId("12-5-4-card")).toHaveTextContent("123");
+  });
 });
