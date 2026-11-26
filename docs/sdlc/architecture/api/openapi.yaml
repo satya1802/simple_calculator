@@ -2,6 +2,17 @@
 openapi: 3.1.0
 info:
   title: Simple Calculator
-  version: architecture-v0
+  version: architecture-v1
   description: Designed API from the approved architecture (not extracted from code).
-paths: {}
+paths:
+  /health:
+    get:
+      summary: Liveness/health check for the serving layer. Returns a simple status;
+        carries no calculator data.
+      description: Liveness/health check for the serving layer. Returns a simple status;
+        carries no calculator data.
+      operationId: get_health
+      parameters: []
+      responses:
+        '200':
+          description: '{ "status": "ok" }'
